@@ -12,49 +12,62 @@ from selenium.webdriver.support import expected_conditions as EC
 import threading
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from collections import Counter
 
 
-# Twoje istniejące funkcje
+# Zoptymalizowana funkcja find_duplicate_start
 
-def update_numbers(driver, numbers, refresh_interval=15):
-    input("Enter")
+def update_numbers(driver, numbers, refresh_interval=10):
+    numbers.reverse()
     while True:
         driver.refresh()
-        time.sleep(1)
+        time.sleep(10)
 
-        roll_boxes = driver.find_elements(By.CSS_SELECTOR, "div.roll-box")
-        print(roll_boxes)
-        new_numbers = [int(box.find_element(By.CSS_SELECTOR, "div.roll.text-center").text) for box in roll_boxes]
-        print("new numbers")
-        print(new_numbers)
-        # Sprawdź, czy nowe numery pokrywają się z istniejącymi numerami
-        duplicate_start = find_duplicate_start(new_numbers, numbers)
-        print(duplicate_start)
-        # Dodaj tylko te numery, których jeszcze nie ma w bazie
-        new_numbers = new_numbers[duplicate_start:]
-        numbers.extend(new_numbers)
+        roll_boxes = driver.find_elements(By.CSS_SELECTOR, "div.box.box-center div.box.box-small")
 
-        # Zaktualizuj liczby z aktualnej strony internetowej
-        numbers = scrape_csgoempire_numbers()
+        divs = driver.find_elements(By.CSS_SELECTOR, "div[data-v-3df2c054]")
 
-        # Zapisz nowe liczby do pliku
-        save_numbers_to_file(numbers)
+        # Zaktualizowane pobieranie liczb
+        new_numbers = []
+        for div in divs[:10]:
+            text = div.find_element(By.CSS_SELECTOR, "span[data-v-3df2c054]").text
+            if '-' in text:
+                index = text.find('-') + 1
+                number = int(text[index:].strip())
+                new_numbers.append(number)
+        new_numbers = new_numbers[2:]
+        print("Numbers: ", numbers)
+        print("New numbers: ", new_numbers)
 
-        time.sleep(refresh_interval)
+
+        new_numbers_unique = []
+
+        for i in range(5):
+            # print("1: ", new_numbers[i], " : ", numbers[0])
+            # print("2: ", new_numbers[i + 1], " : ", numbers[1])
+            # print("3: ", new_numbers[i + 2], " : ", numbers[2])
+
+            if new_numbers[i] == numbers[0] and new_numbers[i + 1] == numbers[1] and new_numbers[i + 2] == numbers[2] and i!=0:
+                print("I(wazne): ", i)
+                print("New unique numbers:", new_numbers_unique)
+                numbers.insert(0, new_numbers_unique)
+                append_numbers_to_file(new_numbers_unique)
+                break
+            else:
+                numbers.insert(0, new_numbers_unique[0])
+                print("NEW NUMBER:", numbers[0])
+                print("Numbers: ", numbers)
+
+
+
 
 
 
 def find_duplicate_start(new_numbers, existing_numbers):
+    counter = Counter(existing_numbers)
     for i, new_number in enumerate(new_numbers):
-        count = 0
-        for existing_number in existing_numbers:
-            if new_number == existing_number:
-                count += 1
-            if count >= 3:
-                print("I: ")
-                print(i)
-                return i
-
+        if counter[new_number] >= 1:
+            return i
     return -1
 
 
@@ -79,6 +92,12 @@ def scrape_csgoempire_numbers():
     # Usuń pierwsze dwie wartości z listy
     return numbers[2:]
 
+
+def append_numbers_to_file(numbers, file_name="csgoroll_numbers.txt"):
+    with open(file_name, "a") as file:
+        for number in numbers:
+            file.write(f"{number}\n")
+            print(f"Zapisuję liczbę {number} do pliku")
 
 
 def save_numbers_to_file(numbers, file_name="csgoroll_numbers.txt"):
@@ -170,3 +189,4 @@ if __name__ == "__main__":
     print(f"KNN przewiduje kolor: {knn_prediction[0]}")
     print(f"Random Forest przewiduje kolor: {rf_prediction[0]}")
     update_numbers(driver, numbers)
+
