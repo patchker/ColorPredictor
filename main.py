@@ -1,27 +1,21 @@
 import time
 import numpy as np
-
 from selenium import webdriver
+from selenium.common import TimeoutException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import threading
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from collections import Counter
-
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-
-
-# Zoptymalizowana funkcja find_duplicate_start
+from bs4 import BeautifulSoup
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 def knn_predict(numbers):
+    print("KNN INPUT NUMBERS: ",numbers)
     features, labels = create_features_and_labels(numbers)
     X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
 
@@ -34,7 +28,7 @@ def knn_predict(numbers):
     test_accuracy = accuracy_score(y_test, y_pred)
     print(f"Test accuracy for KNN: {test_accuracy}")
     print("KNN numbers: ", numbers)
-    last_number = numbers[0]
+    last_number = numbers[-1]
     next_color_prediction = model.predict([[last_number]])
     print(f"KNN przewiduje kolor: {next_color_prediction[0]}")
 
@@ -54,7 +48,7 @@ def random_forest_predict(numbers):
     test_accuracy = accuracy_score(y_test, y_pred)
     print(f"Test accuracy for Random Forest: {test_accuracy}")
 
-    last_number = numbers[0]
+    last_number = numbers[-1]
     next_color_prediction = model.predict([[last_number]])
     print(f"Random Forest przewiduje kolor: {next_color_prediction[0]}")
 
@@ -74,7 +68,7 @@ def svc_predict(numbers):
     test_accuracy = accuracy_score(y_test, y_pred)
     print(f"Test accuracy for SVC: {test_accuracy}")
 
-    last_number = numbers[0]
+    last_number = numbers[-1]
     next_color_prediction = model.predict([[last_number]])
     print(f"SVC przewiduje kolor: {next_color_prediction[0]}")
 
@@ -94,7 +88,7 @@ def gradient_boosting_predict(numbers):
     test_accuracy = accuracy_score(y_test, y_pred)
     print(f"Test accuracy for Gradient Boosting: {test_accuracy}")
 
-    last_number = numbers[0]
+    last_number = numbers[-1]
     next_color_prediction = model.predict([[last_number]])
     print(f"Gradient Boosting przewiduje kolor: {next_color_prediction[0]}")
 
@@ -143,9 +137,11 @@ def update_numbers(driver, numbers, refresh_interval=10):
 
                 last_number = numbers[0]
 
+                numbers.reverse()
                 gradient_boosting_predict(numbers)
                 knn_predict(numbers)
                 random_forest_predict(numbers)
+                numbers.reverse()
 
                 break
             elif new_numbers[i] == numbers[0] and new_numbers[i + 1] == numbers[1] and new_numbers[i + 2] == numbers[
@@ -156,14 +152,6 @@ def update_numbers(driver, numbers, refresh_interval=10):
                 new_numbers_unique.append(new_numbers[i])
 
         time.sleep(5)
-
-
-def find_duplicate_start(new_numbers, existing_numbers):
-    counter = Counter(existing_numbers)
-    for i, new_number in enumerate(new_numbers):
-        if counter[new_number] >= 1:
-            return i
-    return -1
 
 
 def scrape_csgoempire_numbers():
@@ -179,6 +167,40 @@ def scrape_csgoempire_numbers():
             index = text.find('-') + 1
             number = int(text[index:].strip())
             numbers.append(number)
+
+    print(f"Pobrano liczby: {numbers}")
+
+    # Usuń pierwsze dwie wartości z listy
+    return numbers[2:]
+
+def scrape_csgoempire_numbers_v3(driver):
+    url = "https://csgoempire.com/history?seed=3025"
+    driver.get(url)
+
+    input("Enter")
+    try:
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-v-3df2c054]")))
+    except TimeoutException:
+        print("Error: Timed out waiting for page to load.")
+        return []
+
+    page_source = driver.page_source
+    soup = BeautifulSoup(page_source, 'html.parser')
+    divs = soup.select("div[data-v-3df2c054]")
+
+
+    # Zaktualizowane pobieranie liczb
+    numbers = []
+    for div in divs:
+        span = div.find("span")
+        if not span:
+            span = div.find_element_by_xpath('.//span')
+        if span:
+            text = span.text
+            if '-' in text:
+                index = text.find('-') + 1
+                number = int(text[index:].strip())
+                numbers.append(number)
 
     print(f"Pobrano liczby: {numbers}")
 
@@ -242,11 +264,12 @@ if __name__ == "__main__":
 
     driver = webdriver.Chrome(service=service, options=chrome_options)
 
-    url = "https://csgoempire.com/history?seed=3023"
+    url = "https://csgoempire.com/history?seed=3025"
 
     driver.get(url)
 
-    numbers = scrape_csgoempire_numbers()
+    numbers = scrape_csgoempire_numbers_v3(driver)
+
     print("WCZYTANO")
     print(numbers)
     save_numbers_to_file(numbers)
