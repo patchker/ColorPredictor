@@ -154,7 +154,7 @@ def update_numbers(driver, numbers, refresh_interval=10):
         time.sleep(5)
 
 
-def scrape_csgoempire_numbers():
+def scrape_website_numbers():
     input("Enter")
 
     divs = driver.find_elements(By.CSS_SELECTOR, "div[data-v-3df2c054]")
@@ -173,8 +173,8 @@ def scrape_csgoempire_numbers():
     # Usuń pierwsze dwie wartości z listy
     return numbers[2:]
 
-def scrape_csgoempire_numbers_v3(driver):
-    url = "https://csgoempire.com/history?seed=3025"
+def scrape_website_numbers_v3(driver):
+    url = ""
     driver.get(url)
 
     input("Enter")
@@ -208,14 +208,14 @@ def scrape_csgoempire_numbers_v3(driver):
     return numbers[2:]
 
 
-def append_numbers_to_file(numbers, file_name="csgoroll_numbers.txt"):
+def append_numbers_to_file(numbers, file_name="numbers.txt"):
     with open(file_name, "a") as file:
         for number in numbers:
             file.write(f"{number}\n")
             print(f"Zapisuję liczbę {number} do pliku")
 
 
-def save_numbers_to_file(numbers, file_name="csgoroll_numbers.txt"):
+def save_numbers_to_file(numbers, file_name="numbers.txt"):
     with open(file_name, "w") as file:
         for number in numbers:
             file.write(f"{number}\n")
@@ -264,11 +264,11 @@ if __name__ == "__main__":
 
     driver = webdriver.Chrome(service=service, options=chrome_options)
 
-    url = "https://csgoempire.com/history?seed=3025"
+    url = ""
 
     driver.get(url)
 
-    numbers = scrape_csgoempire_numbers_v3(driver)
+    numbers = scrape_website_numbers_v3(driver)
 
     print("WCZYTANO")
     print(numbers)
