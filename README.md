@@ -1,4 +1,4 @@
-Predictive Models for gambling site for my own usage
+Predictive Models for gambling site for educational purposes
 
 This repository contains the implementation of various predictive models including K-Nearest Neighbors (KNN), Support Vector Machine (SVM), Random Forest and Gradient Boosting for predicting the next color in a popular online gambling site.
 
