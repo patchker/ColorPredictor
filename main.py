@@ -222,7 +222,7 @@ def save_numbers_to_file(numbers, file_name="numbers.txt"):
             print(f"Zapisuję liczbę {number} do pliku")
 
 
-def load_numbers_from_file(file_name="csgoroll_numbers.txt"):
+def load_numbers_from_file(file_name="numbers.txt"):
     with open(file_name, "r") as file:
         numbers = [int(line.strip()) for line in file][::-1]
     return numbers
